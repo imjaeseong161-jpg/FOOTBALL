@@ -179,13 +179,12 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--white);
-    color: var(--house-green);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
     box-shadow: 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.2);
   }
   .player-pos {
@@ -272,6 +271,7 @@
   선수·감독·소속팀·세부 포지션 정보는 2025-26 시즌을 기준으로 정리한 참고용 풀입니다. 시즌 종료 후
   승격/강등, 감독 경질·선임이 매우 잦았기 때문에(예: 토트넘은 2026년 7월 기준 감독 공석) 실제 2026-27
   시즌 최신 현황과 다를 수 있습니다. 정확한 정보는 각 구단 공식 사이트에서 확인해주세요.
+  선수 배지는 실제 구단 로고가 아닌 팀 컬러와 약자로 표현한 것입니다.
 </p>
 
 <footer>실제 대회 편성과는 무관한 랜덤 생성기입니다. <strong>즐거운 축구 되세요</strong> ⚽</footer>
@@ -305,23 +305,31 @@ const players = [
   { name: '파비안 셰어', club: '뉴캐슬 유나이티드', pos: 'CB' },
   { name: '에즈리 콘사', club: '애스턴 빌라', pos: 'CB' },
   { name: '맥스 킬만', club: '웨스트햄 유나이티드', pos: 'CB' },
+  { name: '마르크 게이', club: '크리스털 팰리스', pos: 'CB' },
+  { name: '조아킴 안데르센', club: '크리스털 팰리스', pos: 'CB' },
+  { name: '루이스 코트', club: '본머스', pos: 'CB' },
 
   // RB
   { name: '벤 화이트', club: '아스널', pos: 'RB' },
   { name: '리스 제임스', club: '첼시', pos: 'RB' },
   { name: '티노 리브라멘투', club: '뉴캐슬 유나이티드', pos: 'RB' },
+  { name: '페드로 포로', club: '토트넘 홋스퍼', pos: 'RB' },
+  { name: '아론 완-비사카', club: '웨스트햄 유나이티드', pos: 'RB' },
 
   // LB
   { name: '앤드루 로버트슨', club: '리버풀', pos: 'LB' },
-  { name: '페드로 포로', club: '토트넘 홋스퍼', pos: 'LB' },
   { name: '루카스 디뉴', club: '애스턴 빌라', pos: 'LB' },
   { name: '안토니 로빈슨', club: '풀럼', pos: 'LB' },
+  { name: '밀로스 케르케즈', club: '리버풀', pos: 'LB' },
+  { name: '데스티니 우도지', club: '토트넘 홋스퍼', pos: 'LB' },
 
   // CDM
   { name: '데클란 라이스', club: '아스널', pos: 'CDM' },
   { name: '로드리', club: '맨체스터 시티', pos: 'CDM' },
   { name: '카세미루', club: '맨체스터 유나이티드', pos: 'CDM' },
   { name: '모이세스 카이세도', club: '첼시', pos: 'CDM' },
+  { name: '카를로스 발레바', club: '브라이턴 & 호브 앨비언', pos: 'CDM' },
+  { name: '아마두 오나나', club: '에버턴', pos: 'CDM' },
 
   // CM
   { name: '알렉시스 맥알리스터', club: '리버풀', pos: 'CM' },
@@ -338,16 +346,23 @@ const players = [
   { name: '브루누 페르난드스', club: '맨체스터 유나이티드', pos: 'CAM' },
   { name: '콜 파머', club: '첼시', pos: 'CAM' },
   { name: '제임스 매디슨', club: '토트넘 홋스퍼', pos: 'CAM' },
+  { name: '하비 엘리엇', club: '리버풀', pos: 'CAM' },
+  { name: '모건 로저스', club: '애스턴 빌라', pos: 'CAM' },
+  { name: '모건 깁스-화이트', club: '노팅엄 포레스트', pos: 'CAM' },
 
   // RW
   { name: '부카요 사카', club: '아스널', pos: 'RW' },
   { name: '모하메드 살라', club: '리버풀', pos: 'RW' },
   { name: '자레드 보웬', club: '웨스트햄 유나이티드', pos: 'RW' },
+  { name: '안토니', club: '맨체스터 유나이티드', pos: 'RW' },
+  { name: '이스마일라 사르', club: '크리스털 팰리스', pos: 'RW' },
 
   // LW
   { name: '코디 각포', club: '리버풀', pos: 'LW' },
   { name: '브라이언 음뵈모', club: '맨체스터 유나이티드', pos: 'LW' },
   { name: '안토니 고든', club: '뉴캐슬 유나이티드', pos: 'LW' },
+  { name: '제러미 도쿠', club: '맨체스터 시티', pos: 'LW' },
+  { name: '하비 반스', club: '뉴캐슬 유나이티드', pos: 'LW' },
 
   // ST
   { name: '가브리엘 제주스', club: '아스널', pos: 'ST' },
@@ -358,6 +373,7 @@ const players = [
   { name: '도미닉 솔란케', club: '토트넘 홋스퍼', pos: 'ST' },
   { name: '올리 왓킨스', club: '애스턴 빌라', pos: 'ST' },
   { name: '에반 퍼거슨', club: '브라이턴 & 호브 앨비언', pos: 'ST' },
+  { name: '크리스 우드', club: '노팅엄 포레스트', pos: 'ST' },
 ];
 
 // 2025-26 시즌 기준 참고용 감독 풀 (감독 교체가 잦아 실제와 다를 수 있음)
@@ -381,6 +397,30 @@ const managers = [
   { name: '누누 이스피리투 산투', club: '웨스트햄 유나이티드' },
   { name: '세자르 페이쇼투', club: '울버햄튼 원더러스' },
 ];
+
+// 클럽 배지: 실제 로고 대신 팀 컬러 + 약자로 표현합니다.
+const clubBadge = {
+  '아스널':               { abbr: 'ARS', color: '#EF0107', text: '#ffffff' },
+  '애스턴 빌라':           { abbr: 'AVL', color: '#670E36', text: '#ffffff' },
+  '본머스':               { abbr: 'BOU', color: '#DA291C', text: '#ffffff' },
+  '브렌트퍼드':            { abbr: 'BRE', color: '#E30613', text: '#ffffff' },
+  '브라이턴 & 호브 앨비언': { abbr: 'BHA', color: '#0057B8', text: '#ffffff' },
+  '번리':                 { abbr: 'BUR', color: '#6C1D45', text: '#ffffff' },
+  '첼시':                 { abbr: 'CHE', color: '#034694', text: '#ffffff' },
+  '크리스털 팰리스':       { abbr: 'CRY', color: '#1B458F', text: '#ffffff' },
+  '에버턴':               { abbr: 'EVE', color: '#003399', text: '#ffffff' },
+  '풀럼':                 { abbr: 'FUL', color: '#000000', text: '#ffffff' },
+  '리즈 유나이티드':       { abbr: 'LEE', color: '#FFCD00', text: '#1D428A' },
+  '리버풀':               { abbr: 'LIV', color: '#C8102E', text: '#ffffff' },
+  '맨체스터 시티':         { abbr: 'MCI', color: '#6CABDD', text: '#1C2C5B' },
+  '맨체스터 유나이티드':   { abbr: 'MUN', color: '#DA291C', text: '#ffffff' },
+  '뉴캐슬 유나이티드':     { abbr: 'NEW', color: '#241F20', text: '#ffffff' },
+  '노팅엄 포레스트':       { abbr: 'NFO', color: '#DD0000', text: '#ffffff' },
+  '선덜랜드':             { abbr: 'SUN', color: '#EB172B', text: '#ffffff' },
+  '토트넘 홋스퍼':         { abbr: 'TOT', color: '#132257', text: '#ffffff' },
+  '웨스트햄 유나이티드':   { abbr: 'WHU', color: '#7A263A', text: '#ffffff' },
+  '울버햄튼 원더러스':     { abbr: 'WOL', color: '#FDB913', text: '#231F20' },
+};
 
 // 2025-26 시즌의 세부 슬롯(LM/RM/LWB/RWB)은 실제 포지션 풀(LW/RW/LB/RB)에서 채용합니다.
 const slotSource = {
@@ -410,9 +450,9 @@ function pickForSlot(slot, used) {
 function buildPlayerEl(entry) {
   const el = document.createElement('div');
   el.className = 'player';
-  const initials = entry.player.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  const badge = clubBadge[entry.player.club] || { abbr: '?', color: '#888888', text: '#ffffff' };
   el.innerHTML = `
-    <div class="player-badge">${initials}</div>
+    <div class="player-badge" style="background:${badge.color}; color:${badge.text};">${badge.abbr}</div>
     <div class="player-pos">${entry.slot}</div>
     <div class="player-name">${entry.player.name}</div>
     <div class="player-club">${entry.player.club}</div>
