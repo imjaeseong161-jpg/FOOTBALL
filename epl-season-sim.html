@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPL 스쿼드 & 시즌 예측기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --starbucks-green: #006241;
+    --green-accent: #00754A;
+    --house-green: #1E3932;
+    --green-uplift: #2b5148;
+    --gold: #cba258;
+    --neutral-warm: #f2f0eb;
+    --ceramic: #edebe9;
+    --white: #ffffff;
+    --text-black: rgba(0, 0, 0, 0.87);
+    --text-black-soft: rgba(0, 0, 0, 0.58);
+    --text-white: rgba(255, 255, 255, 1);
+    --text-white-soft: rgba(255, 255, 255, 0.70);
+    --card-radius: 12px;
+    --pill-radius: 50px;
+    --card-shadow: 0px 0px 0.5px rgba(0,0,0,0.14), 0px 1px 1px rgba(0,0,0,0.24);
+    --green-light: rgba(212, 233, 226, 0.55);
+    --red-tint: rgba(200, 32, 20, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    letter-spacing: -0.01em;
+    background: var(--neutral-warm);
+    color: var(--text-black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero {
+    width: 100%;
+    text-align: center;
+    padding: 64px 24px 40px;
+  }
+  .hero h1 {
+    font-family: "Lora", "Iowan Old Style", Georgia, serif;
+    font-weight: 600;
+    font-size: 2.6rem;
+    color: var(--starbucks-green);
+    margin: 0 0 12px;
+  }
+  .hero p {
+    color: var(--text-black-soft);
+    font-size: 1.6rem;
+    margin: 0;
+  }
+
+  .section-divider {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 24px;
+    margin: 8px 0 32px;
+  }
+  .section-divider hr {
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin: 0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 24px;
+  }
+  .select-wrap { position: relative; }
+  select {
+    appearance: none;
+    background: var(--white);
+    border: 1px solid #d6dbde;
+    border-radius: 4px;
+    color: var(--text-black);
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 12px 36px 12px 16px;
+    cursor: pointer;
+  }
+  .select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-black-soft);
+    pointer-events: none;
+  }
+  button {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    background: var(--green-accent);
+    color: var(--white);
+    border: 1px solid var(--green-accent);
+    border-radius: var(--pill-radius);
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:active { transform: scale(0.95); }
+  button:hover { background: var(--starbucks-green); border-color: var(--starbucks-green); }
+
+  .formation-label {
+    text-align: center;
+    color: var(--text-black-soft);
+    font-size: 1.3rem;
+    margin-bottom: 4px;
+  }
+  .formation-label strong { color: var(--house-green); }
+
+  .manager-label {
+    text-align: center;
+    color: var(--text-black-soft);
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+  .manager-label strong { color: var(--gold); }
+
+  /* Pitch */
+  .pitch-wrap {
+    width: 100%;
+    max-width: 600px;
+    padding: 0 24px;
+  }
+  .pitch {
+    background: var(--house-green);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 28px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pitch::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 110px;
+    height: 110px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .pitch::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid rgba(255,255,255,0.18);
+  }
+  .pitch-line {
+    display: flex;
+    justify-content: space-evenly;
+    gap: 6px;
+    flex-wrap: wrap;
+    z-index: 1;
+  }
+  .player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 84px;
+    animation: pop 0.35s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .player-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .player-pos {
+    margin-top: 5px;
+    color: var(--gold);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .player-name {
+    margin-top: 2px;
+    color: var(--text-white);
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .player-club {
+    color: var(--text-white-soft);
+    font-size: 1.05rem;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .note {
+    width: 100%;
+    max-width: 640px;
+    padding: 20px 24px 8px;
+    font-size: 1.3rem;
+    color: var(--text-black-soft);
+    text-align: center;
+  }
+  .note a { color: var(--green-accent); text-decoration: none; }
+  .note a:hover { text-decoration: underline; }
+
+  /* Season simulator */
+  .season-section {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 24px 8px;
+  }
+  .season-title {
+    font-weight: 400;
+    font-size: 1.6rem;
+    color: var(--text-black);
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  .season-caption {
+    font-size: 1.3rem;
+    color: var(--text-black-soft);
+    text-align: center;
+    margin: 0 0 20px;
+  }
+  .season-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .table-wrap {
+    background: var(--white);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+    min-width: 480px;
+  }
+  th, td {
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid #e7e7e7;
+    white-space: nowrap;
+  }
+  thead th {
+    color: var(--text-black-soft);
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.club-cell {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mini-badge {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  td.points-cell { font-weight: 700; color: var(--house-green); }
+  tr.zone-ucl { background: var(--green-light); }
+  tr.zone-releg { background: var(--red-tint); }
+
+  .legend-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 14px 0 8px;
+    font-size: 1.2rem;
+    color: var(--text-black-soft);
+  }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+
+  footer {
+    width: 100%;
+    background: var(--house-green);
+    color: var(--text-white-soft);
+    text-align: center;
+    padding: 28px 24px;
+    font-size: 1.3rem;
+    margin-top: 40px;
+  }
+  footer strong { color: var(--gold); font-weight: 600; }
+
+  @media (max-width: 420px) {
+    .hero h1 { font-size: 2.1rem; }
+    .pitch { padding: 20px 6px; gap: 14px; }
+    .pitch-line { gap: 2px; }
+    .player { width: 66px; }
+    .player-badge { width: 34px; height: 34px; font-size: 1rem; }
+    .player-name, .player-club { font-size: 1rem; }
+    table { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>EPL 랜덤 스쿼드 생성기</h1>
+  <p>세부 포지션까지 고려해서 프리미어리그 선발 11명과 감독을 뽑아드려요</p>
+</div>
+
+<div class="controls">
+  <div class="select-wrap">
+    <select id="formation">
+      <option value="random">포메이션 랜덤</option>
+      <option value="4-3-3">4-3-3</option>
+      <option value="4-4-2">4-4-2</option>
+      <option value="4-2-3-1">4-2-3-1</option>
+      <option value="3-5-2">3-5-2</option>
+      <option value="4-5-1">4-5-1</option>
+    </select>
+  </div>
+  <button onclick="drawSquad()">스쿼드 뽑기</button>
+</div>
+
+<p class="formation-label">현재 포메이션: <strong id="formation-name">-</strong></p>
+<p class="manager-label">감독: <strong id="manager-name">-</strong></p>
+
+<div class="pitch-wrap">
+  <div class="pitch" id="pitch"></div>
+</div>
+
+<p class="note">
+  선수·감독·소속팀·세부 포지션 정보는 2025-26 시즌을 기준으로 정리한 참고용 풀입니다. 시즌 종료 후
+  승격/강등, 감독 경질·선임이 매우 잦았기 때문에 실제 2026-27 시즌 최신 현황과 다를 수 있습니다.
+  정확한 정보는 각 구단 공식 사이트에서 확인해주세요. 선수 배지는 실제 구단 로고가 아닌 팀 컬러와
+  약자로 표현한 것입니다. 20개 전 구단이 포지션별로 고르게 포함되도록 각 팀 11명 이상을 채웠으며,
+  승격팀(리즈·번리·선덜랜드)과 울버햄튼은 참고 자료가 적어 다른 팀보다 정확도가 낮을 수 있습니다.
+</p>
+
+<div class="section-divider"><hr></div>
+
+<div class="season-section">
+  <h2 class="season-title">38경기 시즌 예측 시뮬레이션</h2>
+  <p class="season-caption">
+    영국 매체 더 선(The Sun)이 공개한 2025-26 시즌 프리미어리그 슈퍼컴퓨터 예측 승점을
+    <a href="https://www.newdaily.co.kr/site/data/html/2026/05/14/2026051400077.html" target="_blank" rel="noopener">(뉴데일리 보도)</a>
+    각 팀의 전력으로 사용해서, 38경기(홈·원정 더블 라운드로빈)를 무작위로 시뮬레이션한 결과입니다.
+    버튼을 누를 때마다 전력 차이를 반영한 랜덤 결과로 다른 시즌이 만들어져요 — 실제 결과를
+    보장하지 않는 재미용 시뮬레이션입니다.
+  </p>
+  <div class="season-controls">
+    <button onclick="renderSeason()">시즌 시뮬레이션 돌리기</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th style="text-align:left">클럽</th>
+          <th>경기</th>
+          <th>승</th>
+          <th>무</th>
+          <th>패</th>
+          <th>승점</th>
+        </tr>
+      </thead>
+      <tbody id="season-table"></tbody>
+    </table>
+  </div>
+  <div class="legend-row">
+    <span><span class="legend-dot" style="background:var(--green-light)"></span>챔피언스리그 진출권 (1~4위)</span>
+    <span><span class="legend-dot" style="background:var(--red-tint)"></span>강등권 (18~20위)</span>
+  </div>
+</div>
+
+<footer>실제 대회 편성·순위와는 무관한 랜덤 생성기입니다. <strong>즐거운 축구 되세요</strong> ⚽</footer>
+
+<script>
+const players = [
+  // 아스널
+  { name: '다비드 라야', club: '아스널', pos: 'GK' },
+  { name: '윌리엄 살리바', club: '아스널', pos: 'CB' },
+  { name: '가브리엘 마갈량이스', club: '아스널', pos: 'CB' },
+  { name: '벤 화이트', club: '아스널', pos: 'RB' },
+  { name: '리카르도 칼라피오리', club: '아스널', pos: 'LB' },
+  { name: '데클란 라이스', club: '아스널', pos: 'CDM' },
+  { name: '미켈 메리노', club: '아스널', pos: 'CM' },
+  { name: '마르틴 외데고르', club: '아스널', pos: 'CAM' },
+  { name: '부카요 사카', club: '아스널', pos: 'RW' },
+  { name: '가브리엘 마르티넬리', club: '아스널', pos: 'LW' },
+  { name: '가브리엘 제주스', club: '아스널', pos: 'ST' },
+  { name: '카이 하베르츠', club: '아스널', pos: 'ST' },
+
+  // 애스턴 빌라
+  { name: '에밀리아노 마르티네스', club: '애스턴 빌라', pos: 'GK' },
+  { name: '에즈리 콘사', club: '애스턴 빌라', pos: 'CB' },
+  { name: '파우 토레스', club: '애스턴 빌라', pos: 'CB' },
+  { name: '마티 카시', club: '애스턴 빌라', pos: 'RB' },
+  { name: '루카스 디뉴', club: '애스턴 빌라', pos: 'LB' },
+  { name: '부바카르 카마라', club: '애스턴 빌라', pos: 'CDM' },
+  { name: '존 맥긴', club: '애스턴 빌라', pos: 'CM' },
+  { name: '유리 티엘레만스', club: '애스턴 빌라', pos: 'CM' },
+  { name: '모건 로저스', club: '애스턴 빌라', pos: 'CAM' },
+  { name: '레온 베일리', club: '애스턴 빌라', pos: 'RW' },
+  { name: '제이컵 램지', club: '애스턴 빌라', pos: 'LW' },
+  { name: '올리 왓킨스', club: '애스턴 빌라', pos: 'ST' },
+  { name: '도넬 말런', club: '애스턴 빌라', pos: 'ST' },
+
+  // 본머스
+  { name: '마크 트래버스', club: '본머스', pos: 'GK' },
+  { name: '일리아 자바르니', club: '본머스', pos: 'CB' },
+  { name: '제임스 힐', club: '본머스', pos: 'CB' },
+  { name: '맥스 아론스', club: '본머스', pos: 'RB' },
+  { name: '애덤 스미스', club: '본머스', pos: 'LB' },
+  { name: '타일러 애덤스', club: '본머스', pos: 'CDM' },
+  { name: '루이스 쿡', club: '본머스', pos: 'CM' },
+  { name: '라이언 크리스티', club: '본머스', pos: 'CM' },
+  { name: '알렉스 스콧', club: '본머스', pos: 'CAM' },
+  { name: '안토니 세메뇨', club: '본머스', pos: 'RW' },
+  { name: '저스틴 클루이버트', club: '본머스', pos: 'LW' },
+  { name: '에바니우송', club: '본머스', pos: 'ST' },
+
+  // 브렌트퍼드
+  { name: '마르크 플레큰', club: '브렌트퍼드', pos: 'GK' },
+  { name: '네이선 콜린스', club: '브렌트퍼드', pos: 'CB' },
+  { name: '세프 판덴베르흐', club: '브렌트퍼드', pos: 'CB' },
+  { name: '아론 히키', club: '브렌트퍼드', pos: 'RB' },
+  { name: '리코 헨리', club: '브렌트퍼드', pos: 'LB' },
+  { name: '크리스티안 뇌르고르', club: '브렌트퍼드', pos: 'CDM' },
+  { name: '마티아스 옌센', club: '브렌트퍼드', pos: 'CM' },
+  { name: '프랑크 온예카', club: '브렌트퍼드', pos: 'CM' },
+  { name: '케빈 슈에이드', club: '브렌트퍼드', pos: 'RW' },
+  { name: '킨 루이스-포터', club: '브렌트퍼드', pos: 'LW' },
+  { name: '이고르 티아고', club: '브렌트퍼드', pos: 'ST' },
+
+  // 브라이턴 & 호브 앨비언
+  { name: '바르트 페르브라켄', club: '브라이턴 & 호브 앨비언', pos: 'GK' },
+  { name: '루이스 던크', club: '브라이턴 & 호브 앨비언', pos: 'CB' },
+  { name: '얀 파울 판헤케', club: '브라이턴 & 호브 앨비언', pos: 'CB' },
+  { name: '타리크 램튼티', club: '브라이턴 & 호브 앨비언', pos: 'RB' },
+  { name: '페르빈 에스투피냔', club: '브라이턴 & 호브 앨비언', pos: 'LB' },
+  { name: '카를로스 발레바', club: '브라이턴 & 호브 앨비언', pos: 'CDM' },
+  { name: '파스칼 그로스', club: '브라이턴 & 호브 앨비언', pos: 'CM' },
+  { name: '게오르기니오 뤼터', club: '브라이턴 & 호브 앨비언', pos: 'CAM' },
+  { name: '얀쿠바 민테', club: '브라이턴 & 호브 앨비언', pos: 'RW' },
+  { name: '미토마 카오루', club: '브라이턴 & 호브 앨비언', pos: 'LW' },
+  { name: '에반 퍼거슨', club: '브라이턴 & 호브 앨비언', pos: 'ST' },
+  { name: '대니 웰벡', club: '브라이턴 & 호브 앨비언', pos: 'ST' },
+
+  // 번리 (승격 시즌 스쿼드 기준, 데이터 확신도가 낮은 편)
+  { name: '제임스 트래포드', club: '번리', pos: 'GK' },
+  { name: '맥심 에스테브', club: '번리', pos: 'CB' },
+  { name: '얄마르 엑달', club: '번리', pos: 'CB' },
+  { name: '코너 로버츠', club: '번리', pos: 'RB' },
+  { name: '루카스 피레스', club: '번리', pos: 'LB' },
+  { name: '조시 컬렌', club: '번리', pos: 'CM' },
+  { name: '조시 브라운힐', club: '번리', pos: 'CM' },
+  { name: '야코브 브룬 라르센', club: '번리', pos: 'RW' },
+  { name: '라일 포스터', club: '번리', pos: 'ST' },
+
+  // 첼시
+  { name: '로베르트 산체스', club: '첼시', pos: 'GK' },
+  { name: '레비 콜윌', club: '첼시', pos: 'CB' },
+  { name: '웨슬리 포파나', club: '첼시', pos: 'CB' },
+  { name: '리스 제임스', club: '첼시', pos: 'RB' },
+  { name: '마크 쿠쿠레야', club: '첼시', pos: 'LB' },
+  { name: '모이세스 카이세도', club: '첼시', pos: 'CDM' },
+  { name: '엔소 페르난데스', club: '첼시', pos: 'CM' },
+  { name: '로메오 라비아', club: '첼시', pos: 'CM' },
+  { name: '콜 파머', club: '첼시', pos: 'CAM' },
+  { name: '페드로 네투', club: '첼시', pos: 'RW' },
+  { name: '노니 마두에케', club: '첼시', pos: 'LW' },
+  { name: '니콜라스 잭슨', club: '첼시', pos: 'ST' },
+  { name: '크리스토퍼 은쿤쿠', club: '첼시', pos: 'ST' },
+
+  // 크리스털 팰리스
+  { name: '딘 헨더슨', club: '크리스털 팰리스', pos: 'GK' },
+  { name: '마르크 게이', club: '크리스털 팰리스', pos: 'CB' },
+  { name: '조아킴 안데르센', club: '크리스털 팰리스', pos: 'CB' },
+  { name: '다니엘 무뇨스', club: '크리스털 팰리스', pos: 'RB' },
+  { name: '타이릭 미첼', club: '크리스털 팰리스', pos: 'LB' },
+  { name: '아담 워튼', club: '크리스털 팰리스', pos: 'CDM' },
+  { name: '제퍼슨 레르마', club: '크리스털 팰리스', pos: 'CM' },
+  { name: '에벨레치 에제', club: '크리스털 팰리스', pos: 'CAM' },
+  { name: '이스마일라 사르', club: '크리스털 팰리스', pos: 'RW' },
+  { name: '장필리프 마테타', club: '크리스털 팰리스', pos: 'ST' },
+  { name: '오드손 에두아르', club: '크리스털 팰리스', pos: 'ST' },
+
+  // 에버턴
+  { name: '조던 픽포드', club: '에버턴', pos: 'GK' },
+  { name: '제임스 타콥스키', club: '에버턴', pos: 'CB' },
+  { name: '마이클 킨', club: '에버턴', pos: 'CB' },
+  { name: '네이선 패터슨', club: '에버턴', pos: 'RB' },
+  { name: '비탈리 미콜렌코', club: '에버턴', pos: 'LB' },
+  { name: '아마두 오나나', club: '에버턴', pos: 'CDM' },
+  { name: '이드리사 게예', club: '에버턴', pos: 'CM' },
+  { name: '제임스 가너', club: '에버턴', pos: 'CAM' },
+  { name: '잭 해리슨', club: '에버턴', pos: 'RW' },
+  { name: '드와이트 맥닐', club: '에버턴', pos: 'LW' },
+  { name: '베투', club: '에버턴', pos: 'ST' },
+  { name: '도미닉 칼버트-르윈', club: '에버턴', pos: 'ST' },
+
+  // 풀럼
+  { name: '베른트 레노', club: '풀럼', pos: 'GK' },
+  { name: '칼빈 바세이', club: '풀럼', pos: 'CB' },
+  { name: '이사 디오프', club: '풀럼', pos: 'CB' },
+  { name: '케니 테테', club: '풀럼', pos: 'RB' },
+  { name: '안토니 로빈슨', club: '풀럼', pos: 'LB' },
+  { name: '샌더 베르스라위스', club: '풀럼', pos: 'CDM' },
+  { name: '안드레아스 페레이라', club: '풀럼', pos: 'CM' },
+  { name: '에밀 스미스로우', club: '풀럼', pos: 'CAM' },
+  { name: '알렉스 이워비', club: '풀럼', pos: 'RW' },
+  { name: '해리 윌슨', club: '풀럼', pos: 'LW' },
+  { name: '라울 히메네스', club: '풀럼', pos: 'ST' },
+  { name: '로드리고 무니스', club: '풀럼', pos: 'ST' },
+
+  // 리즈 유나이티드 (승격 시즌 스쿼드 기준, 데이터 확신도가 낮은 편)
+  { name: '일란 메슬리에', club: '리즈 유나이티드', pos: 'GK' },
+  { name: '파스칼 스트루이크', club: '리즈 유나이티드', pos: 'CB' },
+  { name: '리암 쿠퍼', club: '리즈 유나이티드', pos: 'CB' },
+  { name: '제이든 보그레', club: '리즈 유나이티드', pos: 'RB' },
+  { name: '후니오르 피르포', club: '리즈 유나이티드', pos: 'LB' },
+  { name: '에단 암파두', club: '리즈 유나이티드', pos: 'CDM' },
+  { name: '글렌 카마라', club: '리즈 유나이티드', pos: 'CM' },
+  { name: '브렌든 애런슨', club: '리즈 유나이티드', pos: 'CAM' },
+  { name: '윌프리드 뇨토', club: '리즈 유나이티드', pos: 'RW' },
+  { name: '다니엘 제임스', club: '리즈 유나이티드', pos: 'LW' },
+  { name: '조엘 피로에', club: '리즈 유나이티드', pos: 'ST' },
+
+  // 리버풀
+  { name: '알리송', club: '리버풀', pos: 'GK' },
+  { name: '비르질 반다이크', club: '리버풀', pos: 'CB' },
+  { name: '이브라히마 코나테', club: '리버풀', pos: 'CB' },
+  { name: '코너 브래들리', club: '리버풀', pos: 'RB' },
+  { name: '앤드루 로버트슨', club: '리버풀', pos: 'LB' },
+  { name: '밀로스 케르케즈', club: '리버풀', pos: 'LB' },
+  { name: '와타루 엔도', club: '리버풀', pos: 'CDM' },
+  { name: '알렉시스 맥알리스터', club: '리버풀', pos: 'CM' },
+  { name: '라이언 그라벤버흐', club: '리버풀', pos: 'CM' },
+  { name: '도미니크 소보슬라이', club: '리버풀', pos: 'CAM' },
+  { name: '모하메드 살라', club: '리버풀', pos: 'RW' },
+  { name: '코디 각포', club: '리버풀', pos: 'LW' },
+  { name: '알렉산더 이삭', club: '리버풀', pos: 'ST' },
+
+  // 맨체스터 시티
+  { name: '에데르송', club: '맨체스터 시티', pos: 'GK' },
+  { name: '루벤 디아스', club: '맨체스터 시티', pos: 'CB' },
+  { name: '요슈코 그바르디올', club: '맨체스터 시티', pos: 'CB' },
+  { name: '리코 루이스', club: '맨체스터 시티', pos: 'RB' },
+  { name: '네이선 아케', club: '맨체스터 시티', pos: 'LB' },
+  { name: '로드리', club: '맨체스터 시티', pos: 'CDM' },
+  { name: '베르나르두 실바', club: '맨체스터 시티', pos: 'CM' },
+  { name: '마테우스 누네스', club: '맨체스터 시티', pos: 'CM' },
+  { name: '필 포든', club: '맨체스터 시티', pos: 'CAM' },
+  { name: '사비뉴', club: '맨체스터 시티', pos: 'RW' },
+  { name: '제러미 도쿠', club: '맨체스터 시티', pos: 'LW' },
+  { name: '엘링 홀란', club: '맨체스터 시티', pos: 'ST' },
+
+  // 맨체스터 유나이티드
+  { name: '안드레 오나나', club: '맨체스터 유나이티드', pos: 'GK' },
+  { name: '레니 요로', club: '맨체스터 유나이티드', pos: 'CB' },
+  { name: '리산드로 마르티네스', club: '맨체스터 유나이티드', pos: 'CB' },
+  { name: '노사이르 마즈라위', club: '맨체스터 유나이티드', pos: 'RB' },
+  { name: '루크 쇼', club: '맨체스터 유나이티드', pos: 'LB' },
+  { name: '카세미루', club: '맨체스터 유나이티드', pos: 'CDM' },
+  { name: '마누엘 우가르테', club: '맨체스터 유나이티드', pos: 'CM' },
+  { name: '브루누 페르난드스', club: '맨체스터 유나이티드', pos: 'CAM' },
+  { name: '안토니', club: '맨체스터 유나이티드', pos: 'RW' },
+  { name: '브라이언 음뵈모', club: '맨체스터 유나이티드', pos: 'LW' },
+  { name: '라스무스 획유운드', club: '맨체스터 유나이티드', pos: 'ST' },
+  { name: '요슈아 지르크지', club: '맨체스터 유나이티드', pos: 'ST' },
+
+  // 뉴캐슬 유나이티드
+  { name: '닉 포프', club: '뉴캐슬 유나이티드', pos: 'GK' },
+  { name: '스벤 보트만', club: '뉴캐슬 유나이티드', pos: 'CB' },
+  { name: '파비안 셰어', club: '뉴캐슬 유나이티드', pos: 'CB' },
+  { name: '티노 리브라멘투', club: '뉴캐슬 유나이티드', pos: 'RB' },
+  { name: '댄 번', club: '뉴캐슬 유나이티드', pos: 'LB' },
+  { name: '조엘린통', club: '뉴캐슬 유나이티드', pos: 'CDM' },
+  { name: '브루누 기마랑이스', club: '뉴캐슬 유나이티드', pos: 'CM' },
+  { name: '산드로 토날리', club: '뉴캐슬 유나이티드', pos: 'CM' },
+  { name: '숀 롱스타프', club: '뉴캐슬 유나이티드', pos: 'CM' },
+  { name: '미겔 알미론', club: '뉴캐슬 유나이티드', pos: 'CAM' },
+  { name: '제이컵 머피', club: '뉴캐슬 유나이티드', pos: 'RW' },
+  { name: '안토니 고든', club: '뉴캐슬 유나이티드', pos: 'LW' },
+  { name: '하비 반스', club: '뉴캐슬 유나이티드', pos: 'LW' },
+  { name: '캘럼 윌슨', club: '뉴캐슬 유나이티드', pos: 'ST' },
+
+  // 노팅엄 포레스트
+  { name: '마츠 셀스', club: '노팅엄 포레스트', pos: 'GK' },
+  { name: '니콜라 밀렌코비치', club: '노팅엄 포레스트', pos: 'CB' },
+  { name: '윌리 볼리', club: '노팅엄 포레스트', pos: 'CB' },
+  { name: '네코 윌리엄스', club: '노팅엄 포레스트', pos: 'RB' },
+  { name: '올라 아이나', club: '노팅엄 포레스트', pos: 'LB' },
+  { name: '다닐로', club: '노팅엄 포레스트', pos: 'CDM' },
+  { name: '라이언 야이츠', club: '노팅엄 포레스트', pos: 'CM' },
+  { name: '모건 깁스-화이트', club: '노팅엄 포레스트', pos: 'CAM' },
+  { name: '안토니 엘랑가', club: '노팅엄 포레스트', pos: 'RW' },
+  { name: '크리스 우드', club: '노팅엄 포레스트', pos: 'ST' },
+  { name: '타이워 아워니이', club: '노팅엄 포레스트', pos: 'ST' },
+
+  // 선덜랜드 (승격 시즌 스쿼드 기준, 데이터 확신도가 낮은 편)
+  { name: '앤서니 패터슨', club: '선덜랜드', pos: 'GK' },
+  { name: '댄 발라드', club: '선덜랜드', pos: 'CB' },
+  { name: '루크 오닌', club: '선덜랜드', pos: 'CB' },
+  { name: '트라이 흄', club: '선덜랜드', pos: 'RB' },
+  { name: '데니스 서킨', club: '선덜랜드', pos: 'LB' },
+  { name: '조베 벨링엄', club: '선덜랜드', pos: 'CM' },
+  { name: '크리스 릭', club: '선덜랜드', pos: 'CM' },
+  { name: '패트릭 로버츠', club: '선덜랜드', pos: 'CAM' },
+  { name: '잭 클라크', club: '선덜랜드', pos: 'RW' },
+  { name: '엘리에저 마옌다', club: '선덜랜드', pos: 'ST' },
+
+  // 토트넘 홋스퍼
+  { name: '굴리엘모 비카리오', club: '토트넘 홋스퍼', pos: 'GK' },
+  { name: '크리스티안 로메로', club: '토트넘 홋스퍼', pos: 'CB' },
+  { name: '미키 반더벤', club: '토트넘 홋스퍼', pos: 'CB' },
+  { name: '페드로 포로', club: '토트넘 홋스퍼', pos: 'RB' },
+  { name: '데스티니 우도지', club: '토트넘 홋스퍼', pos: 'LB' },
+  { name: '로드리고 벤탕쿠르', club: '토트넘 홋스퍼', pos: 'CDM' },
+  { name: '이브 비수마', club: '토트넘 홋스퍼', pos: 'CM' },
+  { name: '제임스 매디슨', club: '토트넘 홋스퍼', pos: 'CAM' },
+  { name: '브레넌 존슨', club: '토트넘 홋스퍼', pos: 'RW' },
+  { name: '데얀 쿨루셉스키', club: '토트넘 홋스퍼', pos: 'LW' },
+  { name: '도미닉 솔란케', club: '토트넘 홋스퍼', pos: 'ST' },
+
+  // 웨스트햄 유나이티드
+  { name: '알폰스 아레올라', club: '웨스트햄 유나이티드', pos: 'GK' },
+  { name: '맥스 킬만', club: '웨스트햄 유나이티드', pos: 'CB' },
+  { name: '콘스탄티노스 마브로파노스', club: '웨스트햄 유나이티드', pos: 'CB' },
+  { name: '아론 완-비사카', club: '웨스트햄 유나이티드', pos: 'RB' },
+  { name: '에메르송 팔미에리', club: '웨스트햄 유나이티드', pos: 'LB' },
+  { name: '기도 로드리게스', club: '웨스트햄 유나이티드', pos: 'CDM' },
+  { name: '토마시 소우체크', club: '웨스트햄 유나이티드', pos: 'CM' },
+  { name: '루카스 파케타', club: '웨스트햄 유나이티드', pos: 'CAM' },
+  { name: '자레드 보웬', club: '웨스트햄 유나이티드', pos: 'RW' },
+  { name: '모하메드 쿠두스', club: '웨스트햄 유나이티드', pos: 'LW' },
+  { name: '니클라스 퓔크루크', club: '웨스트햄 유나이티드', pos: 'ST' },
+
+  // 울버햄튼 원더러스 (데이터 확신도가 낮은 편)
+  { name: '조제 사', club: '울버햄튼 원더러스', pos: 'GK' },
+  { name: '예르손 모스케라', club: '울버햄튼 원더러스', pos: 'CB' },
+  { name: '토티 고메스', club: '울버햄튼 원더러스', pos: 'CB' },
+  { name: '넬손 세메두', club: '울버햄튼 원더러스', pos: 'RB' },
+  { name: '라이안 아이트-누리', club: '울버햄튼 원더러스', pos: 'LB' },
+  { name: '주앙 고메스', club: '울버햄튼 원더러스', pos: 'CDM' },
+  { name: '마리오 레미나', club: '울버햄튼 원더러스', pos: 'CM' },
+  { name: '황희찬', club: '울버햄튼 원더러스', pos: 'RW' },
+  { name: '마테우스 쿠냐', club: '울버햄튼 원더러스', pos: 'ST' },
+  { name: '요르겐 스트란드 라르센', club: '울버햄튼 원더러스', pos: 'ST' },
+];
+
+// 2025-26 시즌 기준 참고용 감독 풀 (감독 교체가 잦아 실제와 다를 수 있음)
+const managers = [
+  { name: '미켈 아르테타', club: '아스널' },
+  { name: '우나이 에메리', club: '애스턴 빌라' },
+  { name: '안도니 이라올라', club: '본머스' },
+  { name: '키스 앤드루스', club: '브렌트퍼드' },
+  { name: '파비안 휘르첼러', club: '브라이턴 & 호브 앨비언' },
+  { name: '사비 알론소', club: '첼시' },
+  { name: '올리버 글라스너', club: '크리스털 팰리스' },
+  { name: '데이비드 모예스', club: '에버턴' },
+  { name: '마르쿠 실바', club: '풀럼' },
+  { name: '다니엘 파케', club: '리즈 유나이티드' },
+  { name: '아르네 슬롯', club: '리버풀' },
+  { name: '펩 과르디올라', club: '맨체스터 시티' },
+  { name: '마이클 캐릭', club: '맨체스터 유나이티드' },
+  { name: '에디 하우', club: '뉴캐슬 유나이티드' },
+  { name: '비토르 페레이라', club: '노팅엄 포레스트' },
+  { name: '레지 르 브리', club: '선덜랜드' },
+  { name: '누누 이스피리투 산투', club: '웨스트햄 유나이티드' },
+  { name: '세자르 페이쇼투', club: '울버햄튼 원더러스' },
+];
+
+// 클럽 배지: 실제 로고 대신 팀 컬러 + 약자로 표현합니다.
+const clubBadge = {
+  '아스널':               { abbr: 'ARS', color: '#EF0107', text: '#ffffff' },
+  '애스턴 빌라':           { abbr: 'AVL', color: '#670E36', text: '#ffffff' },
+  '본머스':               { abbr: 'BOU', color: '#DA291C', text: '#ffffff' },
+  '브렌트퍼드':            { abbr: 'BRE', color: '#E30613', text: '#ffffff' },
+  '브라이턴 & 호브 앨비언': { abbr: 'BHA', color: '#0057B8', text: '#ffffff' },
+  '번리':                 { abbr: 'BUR', color: '#6C1D45', text: '#ffffff' },
+  '첼시':                 { abbr: 'CHE', color: '#034694', text: '#ffffff' },
+  '크리스털 팰리스':       { abbr: 'CRY', color: '#1B458F', text: '#ffffff' },
+  '에버턴':               { abbr: 'EVE', color: '#003399', text: '#ffffff' },
+  '풀럼':                 { abbr: 'FUL', color: '#000000', text: '#ffffff' },
+  '리즈 유나이티드':       { abbr: 'LEE', color: '#FFCD00', text: '#1D428A' },
+  '리버풀':               { abbr: 'LIV', color: '#C8102E', text: '#ffffff' },
+  '맨체스터 시티':         { abbr: 'MCI', color: '#6CABDD', text: '#1C2C5B' },
+  '맨체스터 유나이티드':   { abbr: 'MUN', color: '#DA291C', text: '#ffffff' },
+  '뉴캐슬 유나이티드':     { abbr: 'NEW', color: '#241F20', text: '#ffffff' },
+  '노팅엄 포레스트':       { abbr: 'NFO', color: '#DD0000', text: '#ffffff' },
+  '선덜랜드':             { abbr: 'SUN', color: '#EB172B', text: '#ffffff' },
+  '토트넘 홋스퍼':         { abbr: 'TOT', color: '#132257', text: '#ffffff' },
+  '웨스트햄 유나이티드':   { abbr: 'WHU', color: '#7A263A', text: '#ffffff' },
+  '울버햄튼 원더러스':     { abbr: 'WOL', color: '#FDB913', text: '#231F20' },
+};
+
+// 2025-26 시즌의 세부 슬롯(LM/RM/LWB/RWB)은 실제 포지션 풀(LW/RW/LB/RB)에서 채용합니다.
+const slotSource = {
+  GK: 'GK', CB: 'CB', LB: 'LB', RB: 'RB',
+  CDM: 'CDM', CM: 'CM', CAM: 'CAM',
+  LW: 'LW', RW: 'RW', ST: 'ST',
+  LM: 'LW', RM: 'RW',
+  LWB: 'LB', RWB: 'RB',
+};
+
+const formations = {
+  '4-3-3':   { name: '4-3-3',   lines: [['LW', 'ST', 'RW'], ['CM', 'CDM', 'CM'], ['LB', 'CB', 'CB', 'RB']] },
+  '4-4-2':   { name: '4-4-2',   lines: [['ST', 'ST'], ['LM', 'CM', 'CM', 'RM'], ['LB', 'CB', 'CB', 'RB']] },
+  '4-2-3-1': { name: '4-2-3-1', lines: [['ST'], ['LW', 'CAM', 'RW'], ['CDM', 'CDM'], ['LB', 'CB', 'CB', 'RB']] },
+  '3-5-2':   { name: '3-5-2',   lines: [['ST', 'ST'], ['LWB', 'CM', 'CDM', 'CM', 'RWB'], ['CB', 'CB', 'CB']] },
+  '4-5-1':   { name: '4-5-1',   lines: [['ST'], ['LM', 'CM', 'CDM', 'CM', 'RM'], ['LB', 'CB', 'CB', 'RB']] },
+};
+
+function pickForSlot(slot, used) {
+  const pos = slotSource[slot];
+  const available = players.filter(p => p.pos === pos && !used.has(p));
+  const player = available[Math.floor(Math.random() * available.length)];
+  used.add(player);
+  return { player, slot };
+}
+
+function buildPlayerEl(entry) {
+  const el = document.createElement('div');
+  el.className = 'player';
+  const badge = clubBadge[entry.player.club] || { abbr: '?', color: '#888888', text: '#ffffff' };
+  el.innerHTML = `
+    <div class="player-badge" style="background:${badge.color}; color:${badge.text};">${badge.abbr}</div>
+    <div class="player-pos">${entry.slot}</div>
+    <div class="player-name">${entry.player.name}</div>
+    <div class="player-club">${entry.player.club}</div>
+  `;
+  return el;
+}
+
+function drawSquad() {
+  const select = document.getElementById('formation');
+  const key = select.value === 'random'
+    ? Object.keys(formations)[Math.floor(Math.random() * Object.keys(formations).length)]
+    : select.value;
+  const formation = formations[key];
+
+  document.getElementById('formation-name').textContent = formation.name;
+
+  const manager = managers[Math.floor(Math.random() * managers.length)];
+  document.getElementById('manager-name').textContent = `${manager.name} (${manager.club})`;
+
+  const used = new Set();
+  const pitch = document.getElementById('pitch');
+  pitch.innerHTML = '';
+
+  formation.lines.forEach(slots => {
+    const lineEl = document.createElement('div');
+    lineEl.className = 'pitch-line';
+    slots.forEach(slot => lineEl.appendChild(buildPlayerEl(pickForSlot(slot, used))));
+    pitch.appendChild(lineEl);
+  });
+
+  const gkLine = document.createElement('div');
+  gkLine.className = 'pitch-line';
+  gkLine.appendChild(buildPlayerEl(pickForSlot('GK', used)));
+  pitch.appendChild(gkLine);
+}
+
+drawSquad();
+
+// 더 선(The Sun) 슈퍼컴퓨터 예측 2025-26 시즌 예상 승점을 팀 전력 기준으로 사용합니다.
+const clubStrength = {
+  '아스널': 83,
+  '맨체스터 시티': 80,
+  '맨체스터 유나이티드': 68,
+  '리버풀': 62,
+  '애스턴 빌라': 61,
+  '본머스': 57,
+  '브라이턴 & 호브 앨비언': 56,
+  '브렌트퍼드': 54,
+  '첼시': 52,
+  '에버턴': 52,
+  '풀럼': 51,
+  '선덜랜드': 50,
+  '뉴캐슬 유나이티드': 49,
+  '리즈 유나이티드': 46,
+  '크리스털 팰리스': 46,
+  '노팅엄 포레스트': 45,
+  '토트넘 홋스퍼': 41,
+  '웨스트햄 유나이티드': 39,
+  '번리': 23,
+  '울버햄튼 원더러스': 20,
+};
+
+function matchOutcome(homeStrength, awayStrength) {
+  const homeAdvantage = 5;
+  const diff = (homeStrength + homeAdvantage) - awayStrength;
+  const pHomeBase = 1 / (1 + Math.pow(10, -diff / 15));
+  const pDraw = Math.max(0.14, 0.26 - Math.min(Math.abs(diff), 40) * 0.003);
+  const pHomeWin = pHomeBase * (1 - pDraw);
+  const pAwayWin = (1 - pHomeBase) * (1 - pDraw);
+
+  const r = Math.random();
+  if (r < pHomeWin) return 'H';
+  if (r < pHomeWin + pDraw) return 'D';
+  return 'A';
+}
+
+function simulateSeason() {
+  const clubs = Object.keys(clubStrength);
+  const table = {};
+  clubs.forEach(c => { table[c] = { played: 0, win: 0, draw: 0, loss: 0, points: 0 }; });
+
+  for (let i = 0; i < clubs.length; i++) {
+    for (let j = 0; j < clubs.length; j++) {
+      if (i === j) continue;
+      const home = clubs[i];
+      const away = clubs[j];
+      const result = matchOutcome(clubStrength[home], clubStrength[away]);
+
+      table[home].played++;
+      table[away].played++;
+
+      if (result === 'H') {
+        table[home].win++; table[home].points += 3;
+        table[away].loss++;
+      } else if (result === 'A') {
+        table[away].win++; table[away].points += 3;
+        table[home].loss++;
+      } else {
+        table[home].draw++; table[home].points += 1;
+        table[away].draw++; table[away].points += 1;
+      }
+    }
+  }
+
+  return clubs
+    .map(club => ({ club, ...table[club] }))
+    .sort((a, b) => b.points - a.points || b.win - a.win);
+}
+
+function renderSeason() {
+  const standings = simulateSeason();
+  const tbody = document.getElementById('season-table');
+  tbody.innerHTML = '';
+
+  standings.forEach((row, idx) => {
+    const rank = idx + 1;
+    const tr = document.createElement('tr');
+    if (rank <= 4) tr.className = 'zone-ucl';
+    if (rank >= 18) tr.className = 'zone-releg';
+
+    const badge = clubBadge[row.club] || { abbr: '?', color: '#888888', text: '#ffffff' };
+
+    tr.innerHTML = `
+      <td>${rank}</td>
+      <td class="club-cell">
+        <span class="mini-badge" style="background:${badge.color}; color:${badge.text};">${badge.abbr}</span>
+        ${row.club}
+      </td>
+      <td>${row.played}</td>
+      <td>${row.win}</td>
+      <td>${row.draw}</td>
+      <td>${row.loss}</td>
+      <td class="points-cell">${row.points}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+renderSeason();
+</script>
+
+</body>
+</html>
