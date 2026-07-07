@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>EPL 랜덤 스쿼드 생성기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --starbucks-green: #006241;
+    --green-accent: #00754A;
+    --house-green: #1E3932;
+    --green-uplift: #2b5148;
+    --gold: #cba258;
+    --neutral-warm: #f2f0eb;
+    --ceramic: #edebe9;
+    --white: #ffffff;
+    --text-black: rgba(0, 0, 0, 0.87);
+    --text-black-soft: rgba(0, 0, 0, 0.58);
+    --text-white: rgba(255, 255, 255, 1);
+    --text-white-soft: rgba(255, 255, 255, 0.70);
+    --card-radius: 12px;
+    --pill-radius: 50px;
+    --card-shadow: 0px 0px 0.5px rgba(0,0,0,0.14), 0px 1px 1px rgba(0,0,0,0.24);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    letter-spacing: -0.01em;
+    background: var(--neutral-warm);
+    color: var(--text-black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero {
+    width: 100%;
+    text-align: center;
+    padding: 64px 24px 40px;
+  }
+  .hero h1 {
+    font-family: "Lora", "Iowan Old Style", Georgia, serif;
+    font-weight: 600;
+    font-size: 2.6rem;
+    color: var(--starbucks-green);
+    margin: 0 0 12px;
+  }
+  .hero p {
+    color: var(--text-black-soft);
+    font-size: 1.6rem;
+    margin: 0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 24px;
+  }
+  .select-wrap { position: relative; }
+  select {
+    appearance: none;
+    background: var(--white);
+    border: 1px solid #d6dbde;
+    border-radius: 4px;
+    color: var(--text-black);
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 12px 36px 12px 16px;
+    cursor: pointer;
+  }
+  .select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-black-soft);
+    pointer-events: none;
+  }
+  button {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    background: var(--green-accent);
+    color: var(--white);
+    border: 1px solid var(--green-accent);
+    border-radius: var(--pill-radius);
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:active { transform: scale(0.95); }
+  button:hover { background: var(--starbucks-green); border-color: var(--starbucks-green); }
+
+  .formation-label {
+    text-align: center;
+    color: var(--text-black-soft);
+    font-size: 1.3rem;
+    margin-bottom: 4px;
+  }
+  .formation-label strong { color: var(--house-green); }
+
+  .manager-label {
+    text-align: center;
+    color: var(--text-black-soft);
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+  .manager-label strong { color: var(--gold); }
+
+  /* Pitch */
+  .pitch-wrap {
+    width: 100%;
+    max-width: 600px;
+    padding: 0 24px;
+  }
+  .pitch {
+    background: var(--house-green);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 28px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pitch::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 110px;
+    height: 110px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .pitch::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid rgba(255,255,255,0.18);
+  }
+  .pitch-line {
+    display: flex;
+    justify-content: space-evenly;
+    gap: 6px;
+    flex-wrap: wrap;
+    z-index: 1;
+  }
+  .player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 84px;
+    animation: pop 0.35s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .player-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--house-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .player-pos {
+    margin-top: 5px;
+    color: var(--gold);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .player-name {
+    margin-top: 2px;
+    color: var(--text-white);
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .player-club {
+    color: var(--text-white-soft);
+    font-size: 1.05rem;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .note {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px 24px 8px;
+    font-size: 1.3rem;
+    color: var(--text-black-soft);
+    text-align: center;
+  }
+
+  footer {
+    width: 100%;
+    background: var(--house-green);
+    color: var(--text-white-soft);
+    text-align: center;
+    padding: 28px 24px;
+    font-size: 1.3rem;
+    margin-top: 40px;
+  }
+  footer strong { color: var(--gold); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>EPL 랜덤 스쿼드 생성기</h1>
+  <p>세부 포지션까지 고려해서 프리미어리그 선발 11명과 감독을 뽑아드려요</p>
+</div>
+
+<div class="controls">
+  <div class="select-wrap">
+    <select id="formation">
+      <option value="random">포메이션 랜덤</option>
+      <option value="4-3-3">4-3-3</option>
+      <option value="4-4-2">4-4-2</option>
+      <option value="4-2-3-1">4-2-3-1</option>
+      <option value="3-5-2">3-5-2</option>
+      <option value="4-5-1">4-5-1</option>
+    </select>
+  </div>
+  <button onclick="drawSquad()">스쿼드 뽑기</button>
+</div>
+
+<p class="formation-label">현재 포메이션: <strong id="formation-name">-</strong></p>
+<p class="manager-label">감독: <strong id="manager-name">-</strong></p>
+
+<div class="pitch-wrap">
+  <div class="pitch" id="pitch"></div>
+</div>
+
+<p class="note">
+  선수·감독·소속팀·세부 포지션 정보는 2025-26 시즌을 기준으로 정리한 참고용 풀입니다. 시즌 종료 후
+  승격/강등, 감독 경질·선임이 매우 잦았기 때문에(예: 토트넘은 2026년 7월 기준 감독 공석) 실제 2026-27
+  시즌 최신 현황과 다를 수 있습니다. 정확한 정보는 각 구단 공식 사이트에서 확인해주세요.
+</p>
+
+<footer>실제 대회 편성과는 무관한 랜덤 생성기입니다. <strong>즐거운 축구 되세요</strong> ⚽</footer>
+
+<script>
+const players = [
+  // GK
+  { name: '다비드 라야', club: '아스널', pos: 'GK' },
+  { name: '알리송', club: '리버풀', pos: 'GK' },
+  { name: '안드레 오나나', club: '맨체스터 유나이티드', pos: 'GK' },
+  { name: '로베르트 산체스', club: '첼시', pos: 'GK' },
+  { name: '조던 픽포드', club: '에버턴', pos: 'GK' },
+  { name: '에밀리아노 마르티네스', club: '애스턴 빌라', pos: 'GK' },
+  { name: '닉 포프', club: '뉴캐슬 유나이티드', pos: 'GK' },
+  { name: '베른트 레노', club: '풀럼', pos: 'GK' },
+  { name: '굴리엘모 비카리오', club: '토트넘 홋스퍼', pos: 'GK' },
+  { name: '조제 사', club: '울버햄튼 원더러스', pos: 'GK' },
+
+  // CB
+  { name: '윌리엄 살리바', club: '아스널', pos: 'CB' },
+  { name: '가브리엘 마갈량이스', club: '아스널', pos: 'CB' },
+  { name: '비르질 반다이크', club: '리버풀', pos: 'CB' },
+  { name: '이브라히마 코나테', club: '리버풀', pos: 'CB' },
+  { name: '루벤 디아스', club: '맨체스터 시티', pos: 'CB' },
+  { name: '요슈코 그바르디올', club: '맨체스터 시티', pos: 'CB' },
+  { name: '레니 요로', club: '맨체스터 유나이티드', pos: 'CB' },
+  { name: '레비 콜윌', club: '첼시', pos: 'CB' },
+  { name: '크리스티안 로메로', club: '토트넘 홋스퍼', pos: 'CB' },
+  { name: '미키 반더벤', club: '토트넘 홋스퍼', pos: 'CB' },
+  { name: '스벤 보트만', club: '뉴캐슬 유나이티드', pos: 'CB' },
+  { name: '파비안 셰어', club: '뉴캐슬 유나이티드', pos: 'CB' },
+  { name: '에즈리 콘사', club: '애스턴 빌라', pos: 'CB' },
+  { name: '맥스 킬만', club: '웨스트햄 유나이티드', pos: 'CB' },
+
+  // RB
+  { name: '벤 화이트', club: '아스널', pos: 'RB' },
+  { name: '리스 제임스', club: '첼시', pos: 'RB' },
+  { name: '티노 리브라멘투', club: '뉴캐슬 유나이티드', pos: 'RB' },
+
+  // LB
+  { name: '앤드루 로버트슨', club: '리버풀', pos: 'LB' },
+  { name: '페드로 포로', club: '토트넘 홋스퍼', pos: 'LB' },
+  { name: '루카스 디뉴', club: '애스턴 빌라', pos: 'LB' },
+  { name: '안토니 로빈슨', club: '풀럼', pos: 'LB' },
+
+  // CDM
+  { name: '데클란 라이스', club: '아스널', pos: 'CDM' },
+  { name: '로드리', club: '맨체스터 시티', pos: 'CDM' },
+  { name: '카세미루', club: '맨체스터 유나이티드', pos: 'CDM' },
+  { name: '모이세스 카이세도', club: '첼시', pos: 'CDM' },
+
+  // CM
+  { name: '알렉시스 맥알리스터', club: '리버풀', pos: 'CM' },
+  { name: '라이언 그라벤버흐', club: '리버풀', pos: 'CM' },
+  { name: '베르나르두 실바', club: '맨체스터 시티', pos: 'CM' },
+  { name: '엔소 페르난데스', club: '첼시', pos: 'CM' },
+  { name: '브루누 기마랑이스', club: '뉴캐슬 유나이티드', pos: 'CM' },
+  { name: '산드로 토날리', club: '뉴캐슬 유나이티드', pos: 'CM' },
+  { name: '존 맥긴', club: '애스턴 빌라', pos: 'CM' },
+  { name: '파스칼 그로스', club: '브라이턴 & 호브 앨비언', pos: 'CM' },
+
+  // CAM
+  { name: '마르틴 외데고르', club: '아스널', pos: 'CAM' },
+  { name: '브루누 페르난드스', club: '맨체스터 유나이티드', pos: 'CAM' },
+  { name: '콜 파머', club: '첼시', pos: 'CAM' },
+  { name: '제임스 매디슨', club: '토트넘 홋스퍼', pos: 'CAM' },
+
+  // RW
+  { name: '부카요 사카', club: '아스널', pos: 'RW' },
+  { name: '모하메드 살라', club: '리버풀', pos: 'RW' },
+  { name: '자레드 보웬', club: '웨스트햄 유나이티드', pos: 'RW' },
+
+  // LW
+  { name: '코디 각포', club: '리버풀', pos: 'LW' },
+  { name: '브라이언 음뵈모', club: '맨체스터 유나이티드', pos: 'LW' },
+  { name: '안토니 고든', club: '뉴캐슬 유나이티드', pos: 'LW' },
+
+  // ST
+  { name: '가브리엘 제주스', club: '아스널', pos: 'ST' },
+  { name: '카이 하베르츠', club: '아스널', pos: 'ST' },
+  { name: '알렉산더 이삭', club: '리버풀', pos: 'ST' },
+  { name: '엘링 홀란', club: '맨체스터 시티', pos: 'ST' },
+  { name: '니콜라스 잭슨', club: '첼시', pos: 'ST' },
+  { name: '도미닉 솔란케', club: '토트넘 홋스퍼', pos: 'ST' },
+  { name: '올리 왓킨스', club: '애스턴 빌라', pos: 'ST' },
+  { name: '에반 퍼거슨', club: '브라이턴 & 호브 앨비언', pos: 'ST' },
+];
+
+// 2025-26 시즌 기준 참고용 감독 풀 (감독 교체가 잦아 실제와 다를 수 있음)
+const managers = [
+  { name: '미켈 아르테타', club: '아스널' },
+  { name: '우나이 에메리', club: '애스턴 빌라' },
+  { name: '안도니 이라올라', club: '본머스' },
+  { name: '키스 앤드루스', club: '브렌트퍼드' },
+  { name: '파비안 휘르첼러', club: '브라이턴 & 호브 앨비언' },
+  { name: '사비 알론소', club: '첼시' },
+  { name: '올리버 글라스너', club: '크리스털 팰리스' },
+  { name: '데이비드 모예스', club: '에버턴' },
+  { name: '마르쿠 실바', club: '풀럼' },
+  { name: '다니엘 파케', club: '리즈 유나이티드' },
+  { name: '아르네 슬롯', club: '리버풀' },
+  { name: '펩 과르디올라', club: '맨체스터 시티' },
+  { name: '마이클 캐릭', club: '맨체스터 유나이티드' },
+  { name: '에디 하우', club: '뉴캐슬 유나이티드' },
+  { name: '비토르 페레이라', club: '노팅엄 포레스트' },
+  { name: '레지 르 브리', club: '선덜랜드' },
+  { name: '누누 이스피리투 산투', club: '웨스트햄 유나이티드' },
+  { name: '세자르 페이쇼투', club: '울버햄튼 원더러스' },
+];
+
+// 2025-26 시즌의 세부 슬롯(LM/RM/LWB/RWB)은 실제 포지션 풀(LW/RW/LB/RB)에서 채용합니다.
+const slotSource = {
+  GK: 'GK', CB: 'CB', LB: 'LB', RB: 'RB',
+  CDM: 'CDM', CM: 'CM', CAM: 'CAM',
+  LW: 'LW', RW: 'RW', ST: 'ST',
+  LM: 'LW', RM: 'RW',
+  LWB: 'LB', RWB: 'RB',
+};
+
+const formations = {
+  '4-3-3':   { name: '4-3-3',   lines: [['LW', 'ST', 'RW'], ['CM', 'CDM', 'CM'], ['LB', 'CB', 'CB', 'RB']] },
+  '4-4-2':   { name: '4-4-2',   lines: [['ST', 'ST'], ['LM', 'CM', 'CM', 'RM'], ['LB', 'CB', 'CB', 'RB']] },
+  '4-2-3-1': { name: '4-2-3-1', lines: [['ST'], ['LW', 'CAM', 'RW'], ['CDM', 'CDM'], ['LB', 'CB', 'CB', 'RB']] },
+  '3-5-2':   { name: '3-5-2',   lines: [['ST', 'ST'], ['LWB', 'CM', 'CDM', 'CM', 'RWB'], ['CB', 'CB', 'CB']] },
+  '4-5-1':   { name: '4-5-1',   lines: [['ST'], ['LM', 'CM', 'CDM', 'CM', 'RM'], ['LB', 'CB', 'CB', 'RB']] },
+};
+
+function pickForSlot(slot, used) {
+  const pos = slotSource[slot];
+  const available = players.filter(p => p.pos === pos && !used.has(p));
+  const player = available[Math.floor(Math.random() * available.length)];
+  used.add(player);
+  return { player, slot };
+}
+
+function buildPlayerEl(entry) {
+  const el = document.createElement('div');
+  el.className = 'player';
+  const initials = entry.player.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  el.innerHTML = `
+    <div class="player-badge">${initials}</div>
+    <div class="player-pos">${entry.slot}</div>
+    <div class="player-name">${entry.player.name}</div>
+    <div class="player-club">${entry.player.club}</div>
+  `;
+  return el;
+}
+
+function drawSquad() {
+  const select = document.getElementById('formation');
+  const key = select.value === 'random'
+    ? Object.keys(formations)[Math.floor(Math.random() * Object.keys(formations).length)]
+    : select.value;
+  const formation = formations[key];
+
+  document.getElementById('formation-name').textContent = formation.name;
+
+  const manager = managers[Math.floor(Math.random() * managers.length)];
+  document.getElementById('manager-name').textContent = `${manager.name} (${manager.club})`;
+
+  const used = new Set();
+  const pitch = document.getElementById('pitch');
+  pitch.innerHTML = '';
+
+  formation.lines.forEach(slots => {
+    const lineEl = document.createElement('div');
+    lineEl.className = 'pitch-line';
+    slots.forEach(slot => lineEl.appendChild(buildPlayerEl(pickForSlot(slot, used))));
+    pitch.appendChild(lineEl);
+  });
+
+  const gkLine = document.createElement('div');
+  gkLine.className = 'pitch-line';
+  gkLine.appendChild(buildPlayerEl(pickForSlot('GK', used)));
+  pitch.appendChild(gkLine);
+}
+
+drawSquad();
+</script>
+
+</body>
+</html>
