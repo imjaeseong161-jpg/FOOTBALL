@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EPL 랜덤 스쿼드 생성기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -228,6 +229,15 @@
     margin-top: 40px;
   }
   footer strong { color: var(--gold); font-weight: 600; }
+
+  @media (max-width: 420px) {
+    .hero h1 { font-size: 2.1rem; }
+    .pitch { padding: 20px 6px; gap: 14px; }
+    .pitch-line { gap: 2px; }
+    .player { width: 66px; }
+    .player-badge { width: 34px; height: 34px; font-size: 1rem; }
+    .player-name, .player-club { font-size: 1rem; }
+  }
 </style>
 </head>
 <body>
