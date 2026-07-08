@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --starbucks-green: #006241;
@@ -104,6 +105,22 @@
   }
   button:active { transform: scale(0.95); }
   button:hover { background: var(--starbucks-green); border-color: var(--starbucks-green); }
+
+  #save-btn {
+    background: transparent;
+    color: var(--green-accent);
+  }
+  #save-btn:hover { background: rgba(0, 117, 74, 0.08); color: var(--starbucks-green); border-color: var(--starbucks-green); }
+  #save-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .save-status {
+    text-align: center;
+    font-size: 1.3rem;
+    min-height: 1.8rem;
+    margin: 12px 0 0;
+  }
+  .save-status.ok { color: var(--green-accent); }
+  .save-status.err { color: #c82014; }
 
   .formation-label {
     text-align: center;
@@ -258,6 +275,7 @@
     </select>
   </div>
   <button onclick="drawSquad()">스쿼드 뽑기</button>
+  <button id="save-btn" onclick="saveDraw()">결과 저장</button>
 </div>
 
 <p class="formation-label">현재 포메이션: <strong id="formation-name">-</strong></p>
@@ -266,6 +284,8 @@
 <div class="pitch-wrap">
   <div class="pitch" id="pitch"></div>
 </div>
+
+<p class="save-status" id="save-status"></p>
 
 <p class="note">
   선수·감독·소속팀·세부 포지션 정보는 2025-26 시즌을 기준으로 정리한 참고용 풀입니다. 시즌 종료 후
@@ -637,6 +657,8 @@ function buildPlayerEl(entry) {
   return el;
 }
 
+let lastDraw = null;
+
 function drawSquad() {
   const select = document.getElementById('formation');
   const key = select.value === 'random'
@@ -652,21 +674,68 @@ function drawSquad() {
   const used = new Set();
   const pitch = document.getElementById('pitch');
   pitch.innerHTML = '';
+  const drawnEntries = [];
 
   formation.lines.forEach(slots => {
     const lineEl = document.createElement('div');
     lineEl.className = 'pitch-line';
-    slots.forEach(slot => lineEl.appendChild(buildPlayerEl(pickForSlot(slot, used))));
+    slots.forEach(slot => {
+      const entry = pickForSlot(slot, used);
+      drawnEntries.push(entry);
+      lineEl.appendChild(buildPlayerEl(entry));
+    });
     pitch.appendChild(lineEl);
   });
 
+  const gkEntry = pickForSlot('GK', used);
+  drawnEntries.push(gkEntry);
   const gkLine = document.createElement('div');
   gkLine.className = 'pitch-line';
-  gkLine.appendChild(buildPlayerEl(pickForSlot('GK', used)));
+  gkLine.appendChild(buildPlayerEl(gkEntry));
   pitch.appendChild(gkLine);
+
+  lastDraw = {
+    formation: formation.name,
+    manager,
+    players: drawnEntries.map(e => ({ slot: e.slot, name: e.player.name, club: e.player.club })),
+  };
+
+  const statusEl = document.getElementById('save-status');
+  statusEl.textContent = '';
+  statusEl.className = 'save-status';
 }
 
 drawSquad();
+
+const SUPABASE_URL = 'https://jwiueqotsowppzettpfs.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3aXVlcW90c293cHB6ZXR0cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzOTQ5NjAsImV4cCI6MjA5ODk3MDk2MH0.cxb_faZ6awK3wfjOTHeiiI_huW05YKIGZLYa4QRGSw4';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function saveDraw() {
+  if (!lastDraw) return;
+
+  const btn = document.getElementById('save-btn');
+  const statusEl = document.getElementById('save-status');
+  btn.disabled = true;
+  statusEl.className = 'save-status';
+  statusEl.textContent = '저장 중...';
+
+  const { error } = await supabaseClient.from('squad_draws').insert({
+    formation: lastDraw.formation,
+    manager_name: lastDraw.manager.name,
+    manager_club: lastDraw.manager.club,
+    players: lastDraw.players,
+  });
+
+  btn.disabled = false;
+  if (error) {
+    statusEl.className = 'save-status err';
+    statusEl.textContent = `저장 실패: ${error.message}`;
+  } else {
+    statusEl.className = 'save-status ok';
+    statusEl.textContent = '이 스쿼드를 저장했어요.';
+  }
+}
 </script>
 
 </body>
