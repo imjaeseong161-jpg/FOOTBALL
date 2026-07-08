@@ -282,7 +282,7 @@
       <option value="4-5-1">4-5-1</option>
     </select>
   </div>
-  <button onclick="drawSquad()">스쿼드 뽑기</button>
+  <button onclick="drawSquad(true)">스쿼드 뽑기</button>
   <button id="save-btn" onclick="saveDraw()">결과 저장</button>
 </div>
 
@@ -667,7 +667,7 @@ function buildPlayerEl(entry) {
 
 let lastDraw = null;
 
-function drawSquad() {
+function drawSquad(isUserClick) {
   const select = document.getElementById('formation');
   const key = select.value === 'random'
     ? Object.keys(formations)[Math.floor(Math.random() * Object.keys(formations).length)]
@@ -711,6 +711,10 @@ function drawSquad() {
   const statusEl = document.getElementById('save-status');
   statusEl.textContent = '';
   statusEl.className = 'save-status';
+
+  if (isUserClick && typeof gtag === 'function') {
+    gtag('event', 'draw_squad', { formation: formation.name });
+  }
 }
 
 drawSquad();
@@ -742,6 +746,10 @@ async function saveDraw() {
   } else {
     statusEl.className = 'save-status ok';
     statusEl.textContent = '이 스쿼드를 저장했어요.';
+  }
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'save_draw', { success: !error });
   }
 }
 </script>

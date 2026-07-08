@@ -362,7 +362,7 @@
       <option value="4-5-1">4-5-1</option>
     </select>
   </div>
-  <button onclick="drawSquad()">스쿼드 뽑기</button>
+  <button onclick="drawSquad(true)">스쿼드 뽑기</button>
 </div>
 
 <p class="formation-label">현재 포메이션: <strong id="formation-name">-</strong></p>
@@ -392,7 +392,7 @@
     보장하지 않는 재미용 시뮬레이션입니다.
   </p>
   <div class="season-controls">
-    <button onclick="renderSeason()">시즌 시뮬레이션 돌리기</button>
+    <button onclick="renderSeason(true)">시즌 시뮬레이션 돌리기</button>
   </div>
   <div class="table-wrap">
     <table>
@@ -777,7 +777,7 @@ function buildPlayerEl(entry) {
   return el;
 }
 
-function drawSquad() {
+function drawSquad(isUserClick) {
   const select = document.getElementById('formation');
   const key = select.value === 'random'
     ? Object.keys(formations)[Math.floor(Math.random() * Object.keys(formations).length)]
@@ -804,6 +804,10 @@ function drawSquad() {
   gkLine.className = 'pitch-line';
   gkLine.appendChild(buildPlayerEl(pickForSlot('GK', used)));
   pitch.appendChild(gkLine);
+
+  if (isUserClick && typeof gtag === 'function') {
+    gtag('event', 'draw_squad', { formation: formation.name });
+  }
 }
 
 drawSquad();
@@ -879,7 +883,7 @@ function simulateSeason() {
     .sort((a, b) => b.points - a.points || b.win - a.win);
 }
 
-function renderSeason() {
+function renderSeason(isUserClick) {
   const standings = simulateSeason();
   const tbody = document.getElementById('season-table');
   tbody.innerHTML = '';
@@ -906,6 +910,10 @@ function renderSeason() {
     `;
     tbody.appendChild(tr);
   });
+
+  if (isUserClick && typeof gtag === 'function') {
+    gtag('event', 'run_season_sim');
+  }
 }
 
 renderSeason();
